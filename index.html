@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reclamos Barrio Acacias</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f4f6f8; }
+    header { background: linear-gradient(135deg, #0863be, #66bb6a); color: white; padding: 2rem; text-align: center; }
+    main { max-width: 1100px; margin: 2rem auto; display: grid; grid-template-columns: 1fr; gap: 2rem; padding: 1rem; }
+    .card { background: white; padding: 1.5rem; border-radius: 16px; box-shadow: 0 10px 20px rgba(0,0,0,.1); }
+    label { margin-top: 1rem; display: block; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: .7rem; margin-top: .4rem; border-radius: 8px; border: 1px solid #ccc; }
+    button { margin-top: 1.5rem; padding: .8rem; width: 100%; background: #d60505; color: white; border: none; border-radius: 10px; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    #map { height: 400px; border-radius: 16px; margin-top: 1rem; }
+    footer { text-align: center; margin: 1.5rem; font-size: .85rem; color: #666; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>RECLAMOS BARRIO LAS ACACIAS</h1>
+  <p>Plataforma vecinal gratuita</p>
+</header>
+
+<main>
+  <div class="card">
+    <form
+    action="https://formsubmit.co/lukasa1108@gmail.com" method="post">
+    <h2>Crear tu reclamo</h2>
+    <form id="form">
+      <label>Nombre</label>
+      <input type="text" name="name" placeholder="Tu nombre" required>
+
+      <label>Correo del usuario</label>
+      <input type="email" name="user_email" placeholder="lukasa1108@gmail.com" required>
+
+      <label>Tipo de reclamo</label>
+      <select name="tiziano" required>
+        <option value="">Seleccionar</option>
+        <option>Luminarias</option>
+        <option>Calles</option>
+        <option>Residuos</option>
+      </select>
+
+      <label>Descripción</label>
+      <textarea name="message" rows="4" placeholder="Escribí tu reclamo" required></textarea>
+
+      <label>Ubicación</label>
+      <input id="ubicacion" name="ubicacion" readonly>
+
+      <h3>Marcá el lugar del reclamo</h3>
+      <div id="map"></div>
+      <p>Ubicación seleccionada: <span id="coords">Ninguna</span></p>
+
+      <button type="submit">Enviar tu reclamo</button>
+    </form>
+  </div>
+</main>
+
+<footer>© 2025 Barrio Acacias</footer>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<script>
+  // -------------------------
+  // EMAILJS CONFIG
+  // -------------------------
+  emailjs.init("MrtBmYUGZAQGP5pot"); // Reemplaza con tu Public Key
+
+  const serviceID = "service_6bjmwom";     // Reemplaza con tu Service ID
+  const templateID = "TU_TEMPLATE_ID";   // Reemplaza con tu Template ID
+
+  // -------------------------
+  // MAPA
+  // -------------------------
+  let map = L.map('map').setView([-34.6037, -58.3816], 15);
+  let marker;
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  // Click en mapa para seleccionar ubicación
+  map.on('click', function(e) {
+    if(marker) map.removeLayer(marker);
+    marker = L.marker(e.latlng).addTo(map);
+    document.getElementById('ubicacion').value = 
+      e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5);
+    document.getElementById('coords').innerText = document.getElementById('ubicacion').value;
+  });
+
+  // Geolocalización del usuario
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      let p = [pos.coords.latitude, pos.coords.longitude];
+      map.setView(p, 16);
+      marker = L.marker(p).addTo(map);
+      document.getElementById('ubicacion').value =
+        p[0].toFixed(5) + ', ' + p[1].toFixed(5);
+      document.getElementById('coords').innerText = document.getElementById('ubicacion').value;
+    });
+  }
+
+  // Pedir ubicación del usuario
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        function (position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+
+            // Centrar mapa en la ubicación del usuario
+            map.setView([lat, lng], 15);
+
+            // Marcar ubicación actual
+            L.marker([lat, lng])
+                .addTo(map)
+                .bindPopup("Tu ubicación actual")
+                .openPopup();
+        },
+        function () {
+            alert("No se pudo obtener tu ubicación");
+        }
+    );
+} else {
+    alert("La geolocalización no es compatible con este navegador");
+}
+
+
+  // -------------------------
+  // ENVÍO DEL FORMULARIO
+  // -------------------------
+  document.getElementById('form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const form = this;
+
+    emailjs.sendForm(serviceID, templateID, form)
+      .then(() => {
+        alert("Reclamo enviado correctamente ✅");
+        form.reset();
+        if(marker) map.removeLayer(marker);
+        document.getElementById('coords').innerText = "Ninguna";
+      })
+      .catch((err) => {
+        console.error("Error EmailJS:", err);
+        alert("reclamo enviado con exito");
+        alert("gracias por enviar este reclamo")
+      });
+  });
+</script>
+
+<a
+href="malito:lukasa1108@gmail.com?subject=reclamo=hola mando esto por que hice un reclamo">enviar reclamo</a>
+
+</body>
+</html>
